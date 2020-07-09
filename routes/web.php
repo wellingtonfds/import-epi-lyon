@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\Process\Process;
 
 /*
 |--------------------------------------------------------------------------
@@ -19,7 +20,17 @@ use Maatwebsite\Excel\Facades\Excel;
 |
 */
 
-Artisan::command('import-file', function() {
+Artisan::command('import-file', function () {
+    $this->comment('connnet vpn');
+    $user = env('VPN_USER');
+    $pass = env('VPN_PASS');
+    $domain = env('VPN_DOMAIN');
+    $url = env('VPN_URL');
+    $process =  Process::fromShellCommandline("echo Y | netExtender -u $user  -p $pass -d $domain  --auto-reconnect $url &>/dev/null &");
+    $process->start();
+    $this->comment('wait connection');
+    sleep(10);
+    $this->comment('start processing');
     DB::table('epis')->truncate();
     $this->info('start import');
     $inputFileName = storage_path('app/public/EPIContrato.xlsx');
@@ -33,7 +44,7 @@ Artisan::command('import-file', function() {
     $setPosition = '';
 
     foreach ($all as $name) {
-        // $this->performTask($name);
+
         $epiList = [
             'epis' => [],
             'uniforme' => [],
@@ -69,14 +80,15 @@ Artisan::command('import-file', function() {
         'epis' => [],
         'uniforme' => [],
     ];
-    // dd($listEpi);
-    foreach($listEpi as $epi){
+
+    foreach ($listEpi as $epi) {
         epi::create([
-            'cc'=>$epi['cc'],
-            'meta'=>json_encode($epi['meta'])
+            'cc' => $epi['cc'],
+            'meta' => json_encode($epi['meta'])
         ]);
     }
-    $this->info('finish import');
+    $process->stop(9, SIGINT);
+    $this->comment('finish import');
 });
 
 Route::get('/', function () {
@@ -123,22 +135,12 @@ Route::get('/', function () {
         'epis' => [],
         'uniforme' => [],
     ];
-    // dd($listEpi);
-    foreach($listEpi as $epi){
+
+    foreach ($listEpi as $epi) {
         epi::create([
-            'cc'=>$epi['cc'],
-            'meta'=>json_encode($epi['meta'])
+            'cc' => $epi['cc'],
+            'meta' => json_encode($epi['meta'])
         ]);
     }
     exit();
-    // dd($sheet);
-    // dd($all);
-    //Excel::import(new UsersImport, storage_path('app/public/EPIContrato.xlsx'));
-
-
-});
-
-Route::get('list',function(){
-    $list = epi::first();
-    dd($list->meta);
 });
