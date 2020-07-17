@@ -20,7 +20,7 @@ use Symfony\Component\Process\Process;
 |
 */
 
-Artisan::command('import-file', function () {
+Artisan::command('import', function () {
     $this->comment('connnet vpn');
     $user = env('VPN_USER');
     $pass = env('VPN_PASS');
@@ -89,6 +89,7 @@ Artisan::command('import-file', function () {
     }
     $process->stop(9, SIGINT);
     $this->comment('finish import');
+    shell_exec("kill -9 $(ps aux  | grep [n]etExtender | cut -d ' ' -f 4)");
 });
 
 Route::get('/', function () {
